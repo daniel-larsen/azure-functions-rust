@@ -10,3 +10,4 @@ hyper = { version = "0.14", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 azure_functions = { path = "../" }
+# azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust", branch = "main" }

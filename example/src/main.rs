@@ -31,11 +31,9 @@ async fn request_handler(
     request: Request<Body>,
     env: Environment,
 ) -> Result<Response<Body>, hyper::Error> {
-    println!("{}", request.uri());
-
     let bytes = hyper::body::to_bytes(request.into_body()).await.unwrap();
     let vector: Vec<u8> = bytes.to_vec();
-    println!("{:?}", std::str::from_utf8(&vector).unwrap());
+    // println!("{:?}", std::str::from_utf8(&vector).unwrap());
     let deserialize_request: Result<FunctionPayload, Error> = serde_json::from_slice(&vector);
 
     let mut response: FunctionsResponse = Default::default();
@@ -47,7 +45,7 @@ async fn request_handler(
     }
 
     let response_string: String = serde_json::to_string(&response).unwrap();
-    println!("{}", response_string);
+    // println!("{}", response_string);
     let hyper_response = Response::builder()
         .status(200)
         .header("content-type", "application/json")
@@ -82,11 +80,7 @@ pub struct Environment {}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let keyvault_url = std::env::args()
-        .nth(1)
-        .expect("Missing KEYVAULT_URL environment variable.");
-
-    let environment = Environment {};
+    let environment = Environment {}; // used to pass clients to the function handlers
 
     azure_func_init(environment).await;
     Ok(())
