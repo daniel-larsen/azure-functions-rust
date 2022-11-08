@@ -1,0 +1,16 @@
+[package]
+name = "azure_functions"
+version = "0.1.0"
+authors = ["Daniel Larsen"]
+description = ""
+repository = "https://github.com/daniel-larsen/azure-functions-rust"
+homepage = "https://github.com/daniel-larsen/azure-functions-rust"
+keywords = ["azure", "sdk", "functions"]
+categories = ["api-bindings"]
+readme = "README.md"
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
