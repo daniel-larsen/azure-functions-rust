@@ -1,0 +1,12 @@
+[package]
+name = "azure_functions_example"
+version = "0.1.0"
+authors = ["Daniel Larsen"]
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
+hyper = { version = "0.14", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+azure_functions = { path = "../" }

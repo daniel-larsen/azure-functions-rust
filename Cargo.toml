@@ -2,7 +2,7 @@
 name = "azure_functions"
 version = "0.1.0"
 authors = ["Daniel Larsen"]
-description = ""
+description = "An Azure Functions handler for Rust"
 repository = "https://github.com/daniel-larsen/azure-functions-rust"
 homepage = "https://github.com/daniel-larsen/azure-functions-rust"
 keywords = ["azure", "sdk", "functions"]
