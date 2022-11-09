@@ -9,15 +9,13 @@ async fn process_request(
     env: Environment,
 ) {
     match payload {
-        FunctionPayload::HttpData(payload) => {
-            match (payload.data.req.method, payload.data.req.url.path()) {
-                (HttpMethod::Get, "test") => {
-                    response.outputs.res.body = "Success".to_string();
-                    response.outputs.res.status_code = HttpStatusCode::Ok;
-                }
-                _ => response.outputs.res.body = "path not found".to_string(),
+        FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
+            "HttpTrigger" => {
+                response.outputs.res.body = "Success".to_string();
+                response.outputs.res.status_code = HttpStatusCode::Ok;
             }
-        }
+            _ => response.outputs.res.body = "path not found".to_string(),
+        },
         FunctionPayload::EventHubData(payload) => {}
 
         FunctionPayload::TimerData(payload) => {}

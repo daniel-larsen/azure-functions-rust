@@ -23,6 +23,8 @@ macro_rules! require_auth {
 pub struct HttpPayload {
     #[serde(rename = "Data")]
     pub data: HttpPayloadData,
+    #[serde(rename = "Metadata")]
+    pub metadata: HttpPayloadMetadata,
 }
 
 #[derive(Deserialize)]
@@ -81,4 +83,19 @@ impl DataRequest {
         };
         return username;
     }
+}
+
+#[derive(Deserialize)]
+pub struct HttpPayloadMetadata {
+    pub sys: HttpPayloadMetadataSys,
+}
+
+#[derive(Deserialize)]
+pub struct HttpPayloadMetadataSys {
+    #[serde(rename = "MethodName")]
+    pub method_name: String,
+    #[serde(rename = "UtcNow")]
+    pub utc_now: String, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
+    #[serde(rename = "RandGuid")]
+    pub rand_guid: String,
 }

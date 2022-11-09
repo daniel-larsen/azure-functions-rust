@@ -11,7 +11,6 @@ use self::http::HttpPayload;
 use self::timer::TimerPayload;
 
 #[derive(Deserialize)]
-#[allow(non_snake_case)]
 #[serde(untagged)]
 pub enum FunctionPayload {
     HttpData(HttpPayload),
@@ -26,7 +25,6 @@ pub enum FunctionPayload {
 // }
 
 #[derive(Serialize)]
-#[allow(non_snake_case)]
 pub struct FunctionsResponse {
     #[serde(rename = "Outputs")]
     pub outputs: FunctionsOutput,
