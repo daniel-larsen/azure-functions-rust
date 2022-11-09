@@ -48,8 +48,16 @@ impl Url {
         return self.0.as_str();
     }
 
-    pub fn path(&self) -> &str {
-        return self.0.split("/").nth(3).unwrap();
+    pub fn domain(&self) -> Option<&str> {
+        return self.0.split("/").nth(2);
+    }
+
+    pub fn path(&self) -> Option<Vec<&str>> {
+        let vec = Vec::from_iter(self.0.split("/").skip(3));
+        if vec.is_empty() {
+            return None;
+        }
+        return Some(vec);
     }
 }
 
