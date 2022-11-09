@@ -1,5 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use time::OffsetDateTime;
+use url::Url;
 
 #[macro_export]
 macro_rules! require_auth {
@@ -38,27 +40,6 @@ pub enum HttpMethod {
     Get,
     #[serde(rename = "POST")]
     Post,
-}
-
-#[derive(Deserialize)]
-pub struct Url(pub String);
-
-impl Url {
-    pub fn as_str(&self) -> &str {
-        return self.0.as_str();
-    }
-
-    pub fn domain(&self) -> Option<&str> {
-        return self.0.split("/").nth(2);
-    }
-
-    pub fn path(&self) -> Option<Vec<&str>> {
-        let vec = Vec::from_iter(self.0.split("/").skip(3));
-        if vec.is_empty() {
-            return None;
-        }
-        return Some(vec);
-    }
 }
 
 #[derive(Deserialize)]
