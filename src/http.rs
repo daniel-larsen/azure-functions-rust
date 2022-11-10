@@ -1,12 +1,23 @@
 use serde::Deserialize;
 use std::collections::HashMap;
-use time::OffsetDateTime;
 use url::Url;
+// use time::OffsetDateTime;
 
 #[macro_export]
 macro_rules! require_auth {
     ($request_data:expr,$response:expr) => {
-        if $request_data.user_id().is_empty() {
+        if $request_data.user_id().is_none() {
+            $response.outputs.res.status_code = HttpStatusCode::Unauthorized;
+            $response.outputs.res.body = "".to_string();
+            return;
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_auth_redirect {
+    ($request_data:expr,$response:expr) => {
+        if $request_data.user_id().is_none() {
             let login_url =
                 "/.auth/login/aad?post_login_redirect_url=".to_owned() + $request_data.url.as_str();
             $response.outputs.res.status_code = HttpStatusCode::Found;
@@ -55,22 +66,20 @@ pub struct DataRequest {
 }
 
 impl DataRequest {
-    pub fn user_id(&self) -> String {
+    pub fn user_id(&self) -> Option<String> {
         let header_user_id = self.headers.get("X-MS-CLIENT-PRINCIPAL-ID");
-        let user_id = match header_user_id {
-            Some(header_user_id) => header_user_id[0].clone(),
-            None => String::from(""), // Empty string if user id not found
+        match header_user_id {
+            Some(header_user_id) => return Some(header_user_id[0].clone()),
+            None => return None, // Return None if user id not found
         };
-        return user_id;
     }
 
-    pub fn user_name(&self) -> String {
+    pub fn user_name(&self) -> Option<String> {
         let header_username = self.headers.get("X-MS-CLIENT-PRINCIPAL-NAME");
-        let username: String = match header_username {
-            Some(header_username) => header_username[0].clone(),
-            None => String::from(""), // Return empty string if username not found
+        match header_username {
+            Some(header_username) => return Some(header_username[0].clone()),
+            None => return None, // Return None if username not found
         };
-        return username;
     }
 }
 
@@ -84,7 +93,7 @@ pub struct HttpPayloadMetadataSys {
     #[serde(rename = "MethodName")]
     pub method_name: String,
     #[serde(rename = "UtcNow")]
-    pub utc_now: String, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
+    pub utc_now: String, // OffsetDateTime, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
     #[serde(rename = "RandGuid")]
     pub rand_guid: String,
 }
