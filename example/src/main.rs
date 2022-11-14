@@ -11,6 +11,7 @@ async fn process_request(
     match payload {
         FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
             "HttpTrigger" => {
+                response.logs_new("This message will be visible in Application Insights");
                 response.outputs.res.body = "Success".to_string();
                 response.outputs.res.status_code = HttpStatusCode::Ok;
             }

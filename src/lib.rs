@@ -33,12 +33,11 @@ pub struct FunctionsResponse {
 }
 
 impl FunctionsResponse {
-    pub fn logs_new(&mut self, message: String) {
-        self.logs.push(message);
-    }
-
-    pub fn logs_new_str(&mut self, message: &str) {
-        self.logs.push(String::from(message));
+    pub fn logs_new<T>(&mut self, message: T)
+    where
+        T: Into<String>,
+    {
+        self.logs.push(message.into());
     }
 }
 
