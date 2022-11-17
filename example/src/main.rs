@@ -1,4 +1,4 @@
-use azure_functions::{http::HttpMethod, FunctionPayload, FunctionsResponse, HttpStatusCode};
+use azure_functions::{FunctionPayload, FunctionsResponse, HttpStatusCode};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use serde_json::Error;
@@ -12,7 +12,7 @@ async fn process_request(
         FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
             "HttpTrigger" => {
                 response.logs_new("This message will be visible in Application Insights");
-                response.outputs.res.body = "Success".to_string();
+                response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
                 response.outputs.res.status_code = HttpStatusCode::Ok;
             }
             _ => response.outputs.res.body = "path not found".to_string(),

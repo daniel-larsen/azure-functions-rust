@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use time::OffsetDateTime;
 use url::Url;
-// use time::OffsetDateTime;
 
 #[macro_export]
 macro_rules! require_auth {
@@ -92,8 +92,8 @@ pub struct HttpPayloadMetadata {
 pub struct HttpPayloadMetadataSys {
     #[serde(rename = "MethodName")]
     pub method_name: String,
-    #[serde(rename = "UtcNow")]
-    pub utc_now: String, // OffsetDateTime, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
+    #[serde(rename = "UtcNow", with = "time::serde::rfc3339")]
+    pub utc_now: OffsetDateTime, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
     #[serde(rename = "RandGuid")]
     pub rand_guid: String,
 }

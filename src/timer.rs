@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use time::OffsetDateTime;
 
 #[derive(Deserialize)]
 pub struct TimerPayload {
@@ -28,12 +29,12 @@ pub struct TimerPayloadDataSchedule {
 
 #[derive(Deserialize)]
 pub struct TimerPayloadDataScheduleStatus {
-    #[serde(rename = "Last")]
-    pub last: String,
-    #[serde(rename = "Next")]
-    pub next: String,
-    #[serde(rename = "LastUpdated")]
-    pub last_updated: String,
+    #[serde(rename = "Last", with = "time::serde::rfc3339::option")]
+    pub last: Option<OffsetDateTime>,
+    #[serde(rename = "Next", with = "time::serde::rfc3339")]
+    pub next: OffsetDateTime,
+    #[serde(rename = "LastUpdated", with = "time::serde::rfc3339::option")]
+    pub last_updated: Option<OffsetDateTime>,
 }
 
 #[derive(Deserialize)]
@@ -45,8 +46,8 @@ pub struct TimerPayloadMetadata {
 pub struct TimerPayloadMetadataSys {
     #[serde(rename = "MethodName")]
     pub method_name: String, // "MethodName": "checkCertificates",
-    #[serde(rename = "UtcNow")]
-    pub utc_now: String, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
+    #[serde(rename = "UtcNow", with = "time::serde::rfc3339")]
+    pub utc_now: OffsetDateTime, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
     #[serde(rename = "RandGuid")]
     pub rand_guid: String, // "RandGuid": "7492f2df-883f-4777-b799-bdfc267fc0e7"
 }
