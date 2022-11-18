@@ -2,6 +2,24 @@
 
 This repository contains an Azure Functions handler for Rust.
 
+## Why Azure Functions and Rust
+Reduced cold start latency
+* Zip deployed app is less than 2MB which reduces the time needed to copy the app from storage.
+* Entire app is precompiled, no waiting for interpreter or JIT compiler to make machine code.
+
+Rust benefits
+* Rust runs fast and is efficient with memory which reduces execution time and cost.
+* Strong type system with guaranteed memory and thread safety. 
+
+Azure Functions benefits 
+* Use Function triggers and bindings to write less boilerplate code.
+* Use App Service auth to get simple authentication and authorization.
+
+## Features
+* Async function execution
+* Support for common triggers
+* Log to Application Insights
+
 ## Installation
 
 1. Add azure-functions-rust to your Cargo.toml file. Make sure tokio and hyper are all included.
