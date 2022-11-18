@@ -1,5 +1,5 @@
 use serde::Deserialize;
-// use time::OffsetDateTime;
+use time::OffsetDateTime;
 
 #[derive(Deserialize)]
 pub struct EventHubPayloadSystemProperties {
@@ -10,10 +10,8 @@ pub struct EventHubPayloadSystemProperties {
 #[allow(non_snake_case)]
 #[derive(Deserialize)]
 pub struct EventHubPayloadMetadata {
-    #[serde(rename = "EnqueuedTimeUtc")]
-    pub enqueued_time_utc: String,
-    // #[serde(rename = "EnqueuedTimeUtc", with = "time::serde::rfc3339")]
-    // pub enqueued_time_utc: OffsetDateTime,
+    #[serde(rename = "EnqueuedTimeUtc", with = "time::serde::rfc3339")]
+    pub enqueued_time_utc: OffsetDateTime,
     #[serde(rename = "SystemProperties")]
     pub properties: EventHubPayloadSystemProperties,
 }
