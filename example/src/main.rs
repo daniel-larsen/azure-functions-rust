@@ -1,12 +1,10 @@
-use azure_functions::{FunctionPayload, FunctionsResponse, HttpStatusCode};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Request, Response, Server};
-use serde_json::Error;
+use azure_functions::{azure_func_init, FunctionPayload, FunctionsResponse, HttpStatusCode};
+use hyper::{Body, Request, Response};
 
 async fn process_request(
     payload: FunctionPayload,
     response: &mut FunctionsResponse,
-    env: Environment,
+    _env: Environment,
 ) {
     match payload {
         FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
@@ -17,10 +15,9 @@ async fn process_request(
             }
             _ => response.outputs.res.body = "path not found".to_string(),
         },
-        FunctionPayload::EventHubData(payload) => {}
+        FunctionPayload::EventHubData(_payload) => {}
 
-        FunctionPayload::TimerData(payload) => {}
-        _ => response.outputs.res.body = "payload type not found".to_string(),
+        FunctionPayload::TimerData(_payload) => {}
     }
 }
 
@@ -33,7 +30,8 @@ async fn request_handler(
     let bytes = hyper::body::to_bytes(request.into_body()).await.unwrap();
     let vector: Vec<u8> = bytes.to_vec();
     // println!("{:?}", std::str::from_utf8(&vector).unwrap());
-    let deserialize_request: Result<FunctionPayload, Error> = serde_json::from_slice(&vector);
+    let deserialize_request: Result<FunctionPayload, serde_json::Error> =
+        serde_json::from_slice(&vector);
 
     let mut response: FunctionsResponse = Default::default();
 
@@ -54,26 +52,6 @@ async fn request_handler(
     Ok(hyper_response)
 }
 
-async fn azure_func_init(env: Environment) {
-    let port_key = "FUNCTIONS_CUSTOMHANDLER_PORT";
-    let port: u16 = match std::env::var(port_key) {
-        Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
-        Err(_) => 3000,
-    };
-
-    let addr = ([127, 0, 0, 1], port).into();
-    let service = make_service_fn(move |_| {
-        let env = env.clone();
-        async move { Ok::<_, hyper::Error>(service_fn(move |req| request_handler(req, env.clone()))) }
-    });
-    let server = Server::bind(&addr).serve(service);
-
-    // Run this server for... forever!
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Environment {}
 
@@ -81,6 +59,6 @@ pub struct Environment {}
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let environment = Environment {}; // used to pass clients to the function handlers
 
-    azure_func_init(environment).await;
+    azure_func_init(request_handler, environment).await;
     Ok(())
 }

@@ -3,22 +3,27 @@
 This repository contains an Azure Functions handler for Rust.
 
 ## Why Azure Functions and Rust
+
 Reduced cold start latency
-* Zip deployed app is less than 2MB which reduces the time needed to copy the app from storage.
-* Entire app is precompiled, no waiting for interpreter or JIT compiler to make machine code.
+
+- Zip deployed app is less than 2MB which reduces the time needed to copy the app from storage.
+- Entire app is precompiled, no waiting for interpreter or JIT compiler to make machine code.
 
 Rust benefits
-* Rust runs fast and is efficient with memory which reduces execution time and cost.
-* Strong type system with guaranteed memory and thread safety. 
 
-Azure Functions benefits 
-* Use Function triggers and bindings to write less boilerplate code.
-* Use App Service auth to get simple authentication and authorization.
+- Rust runs fast and is efficient with memory which reduces execution time and cost.
+- Strong type system with guaranteed memory and thread safety.
+
+Azure Functions benefits
+
+- Use Function triggers and bindings to write less boilerplate code.
+- Use App Service auth to get simple authentication and authorization.
 
 ## Features
-* Async function execution
-* Support for common triggers
-* Log to Application Insights
+
+- Async function execution
+- Support for common triggers
+- Log to Application Insights
 
 ## Installation
 
@@ -31,23 +36,18 @@ hyper = { version = "0.14", features = ["full"] }
 azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust", branch = "main" }
 
 ```
-2. Initalize the handler from your main.rs file. 
+
+2. Initalize the handler from your main.rs file.
 
 ```rust
+#[derive(Debug, Clone)]
+pub struct Environment {}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let keyvault_url = std::env::args()
-        .nth(1)
-        .expect("Missing KEYVAULT_URL environment variable.");
+    let environment = Environment {}; // used to pass clients to the function handlers
 
-    let creds = DefaultAzureCredential::default();
-    let keyvault_client = CertificateClient::new(keyvault_url.as_str(), Arc::new(creds))?;
-
-    let environment = Environment {
-        certificate_client: keyvault_client,
-    };
-
-    azure_func_init(environment).await;
+    azure_func_init(request_handler, environment).await;
     Ok(())
 }
 
