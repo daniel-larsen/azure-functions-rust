@@ -65,7 +65,7 @@ where
     if deserialize_request.is_err() {
         response.outputs.res.body = deserialize_request.err().unwrap().to_string();
     } else {
-        handler(deserialize_request.unwrap(), env).await;
+        response = handler(deserialize_request.unwrap(), env).await.unwrap();
     }
 
     let response_string: String = serde_json::to_string(&response).unwrap();
