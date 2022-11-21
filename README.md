@@ -40,6 +40,28 @@ azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust
 2. Initalize the handler from your main.rs file.
 
 ```rust
+use azure_functions::{azure_func_init, FunctionPayload, FunctionsResponse, HttpStatusCode};
+use std::fmt::Error;
+
+async fn handler(payload: FunctionPayload, _env: Environment) -> Result<FunctionsResponse, Error> {
+    let mut response = FunctionsResponse::default();
+
+    match payload {
+        FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
+            "HttpTrigger" => {
+                response.logs_new("This message will be visible in Application Insights");
+                response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
+                response.outputs.res.status_code = HttpStatusCode::Ok;
+            }
+            _ => response.outputs.res.body = "path not found".to_string(),
+        },
+        FunctionPayload::EventHubData(_payload) => {}
+
+        FunctionPayload::TimerData(_payload) => {}
+    };
+    return Ok(response);
+}
+
 #[derive(Debug, Clone)]
 pub struct Environment {}
 
@@ -47,7 +69,7 @@ pub struct Environment {}
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let environment = Environment {}; // used to pass clients to the function handlers
 
-    azure_func_init(request_handler, environment).await;
+    azure_func_init(handler, environment).await;
     Ok(())
 }
 
