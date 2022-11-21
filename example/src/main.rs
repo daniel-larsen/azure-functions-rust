@@ -13,6 +13,13 @@ async fn process_request(
                 response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
                 response.outputs.res.status_code = HttpStatusCode::Ok;
             }
+            "HttpTriggerAuth" => {
+                #[cfg(not(debug_assertions))]
+                require_auth_redirect!(payload.data.req, response);
+                response.logs_new("This message will be visible in Application Insights");
+                response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
+                response.outputs.res.status_code = HttpStatusCode::Ok;
+            }
             _ => response.outputs.res.body = "path not found".to_string(),
         },
         FunctionPayload::EventHubData(_payload) => {}

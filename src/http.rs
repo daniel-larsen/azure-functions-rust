@@ -4,6 +4,7 @@ use time::OffsetDateTime;
 use url::Url;
 
 #[macro_export]
+#[allow(unused_imports)]
 macro_rules! require_auth {
     ($request_data:expr,$response:expr) => {
         if $request_data.user_id().is_none() {
@@ -15,6 +16,7 @@ macro_rules! require_auth {
 }
 
 #[macro_export]
+#[allow(unused_imports)]
 macro_rules! require_auth_redirect {
     ($request_data:expr,$response:expr) => {
         if $request_data.user_id().is_none() {
