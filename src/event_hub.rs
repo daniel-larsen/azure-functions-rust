@@ -7,7 +7,6 @@ pub struct EventHubPayloadSystemProperties {
     pub device_id: String,
 }
 
-#[allow(non_snake_case)]
 #[derive(Deserialize)]
 pub struct EventHubPayloadMetadata {
     #[serde(rename = "EnqueuedTimeUtc", with = "time::serde::rfc3339")]
@@ -16,7 +15,6 @@ pub struct EventHubPayloadMetadata {
     pub properties: EventHubPayloadSystemProperties,
 }
 
-#[allow(non_snake_case)]
 #[derive(Deserialize)]
 pub struct EventHubPayload {
     #[serde(rename = "Data")]
@@ -24,3 +22,9 @@ pub struct EventHubPayload {
     #[serde(rename = "Metadata")]
     pub metadata: EventHubPayloadMetadata,
 }
+
+// impl EventHubPayload {
+//     pub fn method_name(&self) -> &str {
+//         return self.metadata.sys.method_name.as_str();
+//     }
+// }

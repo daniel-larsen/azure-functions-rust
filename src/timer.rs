@@ -11,6 +11,12 @@ pub struct TimerPayload {
     pub metadata: TimerPayloadMetadata,
 }
 
+impl TimerPayload {
+    pub fn method_name(&self) -> &str {
+        return self.metadata.sys.method_name.as_str();
+    }
+}
+
 #[derive(Deserialize)]
 pub struct TimerPayloadData {
     #[serde(rename = "Schedule")]

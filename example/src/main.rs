@@ -5,7 +5,7 @@ async fn handler(payload: FunctionPayload, _env: Environment) -> Result<Function
     let mut response = FunctionsResponse::default();
 
     match payload {
-        FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
+        FunctionPayload::HttpData(payload) => match payload.method_name() {
             "HttpTrigger" => {
                 response.logs_new("This message will be visible in Application Insights");
                 response.outputs.res.body = payload.metadata.sys.utc_now.to_string();

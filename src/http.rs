@@ -40,6 +40,12 @@ pub struct HttpPayload {
     pub metadata: HttpPayloadMetadata,
 }
 
+impl HttpPayload {
+    pub fn method_name(&self) -> &str {
+        return self.metadata.sys.method_name.as_str();
+    }
+}
+
 #[derive(Deserialize)]
 pub struct HttpPayloadData {
     pub req: DataRequest,
