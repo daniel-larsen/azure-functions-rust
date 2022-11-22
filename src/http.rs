@@ -69,6 +69,8 @@ pub struct DataRequest {
     pub query: HashMap<String, String>,
     #[serde(rename = "Headers")]
     pub headers: HashMap<String, Vec<String>>,
+    #[serde(rename = "Body")]
+    pub body: Option<String>,
 }
 
 impl DataRequest {
