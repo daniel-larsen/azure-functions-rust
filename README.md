@@ -32,7 +32,6 @@ Azure Functions benefits
 ```toml
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
-hyper = { version = "0.14", features = ["full"] }
 azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust", branch = "main" }
 
 ```
@@ -47,7 +46,7 @@ async fn handler(payload: FunctionPayload, _env: Environment) -> Result<Function
     let mut response = FunctionsResponse::default();
 
     match payload {
-        FunctionPayload::HttpData(payload) => match payload.metadata.sys.method_name.as_str() {
+        FunctionPayload::HttpData(payload) => match payload.method_name() {
             "HttpTrigger" => {
                 response.logs_new("This message will be visible in Application Insights");
                 response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
