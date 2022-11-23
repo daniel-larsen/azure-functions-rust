@@ -1,12 +1,14 @@
-use serde::Deserialize;
 use std::collections::HashMap;
+
+use serde::Deserialize;
 use time::OffsetDateTime;
+
+use crate::InputBinding;
 
 #[derive(Deserialize)]
 pub struct TimerPayload {
     #[serde(rename = "Data")]
-    #[serde(flatten)]
-    pub data: HashMap<String, TimerPayloadData>,
+    pub data: TimerPayloadData,
     #[serde(rename = "Metadata")]
     pub metadata: TimerPayloadMetadata,
 }
@@ -19,6 +21,13 @@ impl TimerPayload {
 
 #[derive(Deserialize)]
 pub struct TimerPayloadData {
+    pub timer: TimerPayloadDataTimer,
+    #[serde(flatten)]
+    pub inputs: HashMap<String, InputBinding>,
+}
+
+#[derive(Deserialize)]
+pub struct TimerPayloadDataTimer {
     #[serde(rename = "Schedule")]
     pub schedule: TimerPayloadDataSchedule,
     #[serde(rename = "ScheduleStatus")]

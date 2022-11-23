@@ -87,11 +87,11 @@ pub enum FunctionPayload {
     TimerData(TimerPayload),
 }
 
-// impl FunctionPayload {
-//     pub fn method_name(&self) {
-//         return self.metadata.sys.method_name;
-//     }
-// }
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum InputBinding {
+    Blob(String),
+}
 
 #[derive(Serialize)]
 pub struct FunctionsResponse {

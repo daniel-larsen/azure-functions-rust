@@ -7,4 +7,3 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
 azure_functions = { path = "../" }
-# azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust", branch = "main" }

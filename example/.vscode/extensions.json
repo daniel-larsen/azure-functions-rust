@@ -1,3 +1,3 @@
 {
-  "recommendations": ["rust-lang.rust-analyzer", "azurite.azurite"]
+  "recommendations": ["ms-azuretools.vscode-azurefunctions", "rust-lang.rust-analyzer", "azurite.azurite"]
 }

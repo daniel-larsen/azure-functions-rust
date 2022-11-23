@@ -22,7 +22,10 @@ async fn handler(payload: FunctionPayload, _env: Environment) -> Result<Function
         },
         FunctionPayload::EventHubData(_payload) => {}
 
-        FunctionPayload::TimerData(_payload) => {}
+        FunctionPayload::TimerData(payload) => match payload.method_name() {
+            "TimerTrigger" => response.logs_new("Timer Trigger Logs"),
+            _ => response.logs_new("Trigger not found"),
+        },
     };
     return Ok(response);
 }

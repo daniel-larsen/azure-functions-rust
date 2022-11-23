@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 use url::Url;
 
+use crate::InputBinding;
+
 #[macro_export]
 macro_rules! require_auth {
     ($request_data:expr,$response:expr) => {
@@ -49,6 +51,8 @@ impl HttpPayload {
 #[derive(Deserialize)]
 pub struct HttpPayloadData {
     pub req: DataRequest,
+    #[serde(flatten)]
+    pub inputs: HashMap<String, InputBinding>,
 }
 
 #[derive(Deserialize, Clone, Copy)]
