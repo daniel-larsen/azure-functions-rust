@@ -1,4 +1,4 @@
-# Rust Handler for Azure Functions (Work in Progress)
+# Azure Functions handler in Rust (Work in Progress)
 
 This repository contains an Azure Functions handler for Rust.
 

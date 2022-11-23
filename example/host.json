@@ -7,7 +7,7 @@
 	},
 	"customHandler": {
 		"description": {
-			"defaultExecutablePath": "target/debug/azure_functions_example"
+			"defaultExecutablePath": "target/debug/azure_functions_example.exe"
 		}
 	}
 }
