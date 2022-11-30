@@ -5,6 +5,7 @@ pub mod timer;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::future::Future;
@@ -47,10 +48,7 @@ pub fn log_error(error: String) -> Response<Body> {
     return Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(format!(
-            r#"{{"Outputs":{{"res":{{"body":"An error occurred while processing the request, check the log for a detailed error message.","statusCode":"400","headers":{{}}}}}},"Logs":["{}"]}}"#,
-            error
-        )))
+        .body(Body::from(json!({"Outputs":{"res":{"body":"An error occurred while processing the request, check the log for a detailed error message.","statusCode":"400","headers":{}}},"Logs":[error]}).to_string()))
         .unwrap();
 }
 

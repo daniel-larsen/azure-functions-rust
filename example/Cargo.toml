@@ -7,3 +7,4 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
 azure_functions = { path = "../" }
+log = "0.4"
