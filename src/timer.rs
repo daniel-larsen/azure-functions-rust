@@ -15,7 +15,7 @@ pub struct TimerPayload {
 
 impl TimerPayload {
     pub fn method_name(&self) -> &str {
-        return self.metadata.sys.method_name.as_str();
+        self.metadata.sys.method_name.as_str()
     }
 }
 

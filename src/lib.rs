@@ -45,11 +45,11 @@ where
 }
 
 pub fn log_error(error: String) -> Response<Body> {
-    return Response::builder()
+    Response::builder()
         .status(200)
         .header("content-type", "application/json")
         .body(Body::from(json!({"Outputs":{"res":{"body":"An error occurred while processing the request, check the log for a detailed error message.","statusCode":"400","headers":{}}},"Logs":[error]}).to_string()))
-        .unwrap();
+        .unwrap()
 }
 
 // This is our service handler. It receives a Request, routes on its
@@ -114,7 +114,7 @@ pub enum InputBinding {
     Blob(String),
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct FunctionsResponse {
     #[serde(rename = "Outputs")]
     pub outputs: FunctionsOutput,
@@ -129,36 +129,34 @@ impl FunctionsResponse {
     {
         self.logs.push(message.into());
     }
-}
 
-impl Default for FunctionsResponse {
-    fn default() -> FunctionsResponse {
-        FunctionsResponse {
-            outputs: FunctionsOutput::default(),
-            logs: vec![],
-        }
+    pub fn http(status_code: HttpStatusCode) -> Self {
+        let mut response = FunctionsResponse::default();
+        response.outputs.res.status_code = status_code;
+        response
+    }
+
+    pub fn body<S>(mut self, body: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.outputs.res.body = body.into();
+        self
     }
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct FunctionsOutput {
     pub res: FunctionsResponseData,
 }
 
-impl Default for FunctionsOutput {
-    fn default() -> FunctionsOutput {
-        FunctionsOutput {
-            res: FunctionsResponseData::default(),
-        }
-    }
-}
-
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub enum HttpStatusCode {
     #[serde(rename = "200")]
     Ok,
     #[serde(rename = "302")]
     Found,
+    #[default]
     #[serde(rename = "400")]
     BadRequest,
     #[serde(rename = "401")]
@@ -167,20 +165,10 @@ pub enum HttpStatusCode {
     NotFound,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct FunctionsResponseData {
     pub body: String,
     #[serde(rename = "statusCode")]
     pub status_code: HttpStatusCode,
     pub headers: HashMap<String, String>,
-}
-
-impl Default for FunctionsResponseData {
-    fn default() -> FunctionsResponseData {
-        FunctionsResponseData {
-            body: "".to_string(),
-            status_code: HttpStatusCode::BadRequest,
-            headers: HashMap::new(),
-        }
-    }
 }

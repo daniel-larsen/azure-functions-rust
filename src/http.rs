@@ -7,29 +7,30 @@ use crate::InputBinding;
 
 #[macro_export]
 macro_rules! require_auth {
-    ($request_data:expr,$response:expr) => {
+    ($request_data:expr) => {
         if $request_data.user_id().is_none() {
-            $response.outputs.res.status_code = HttpStatusCode::Unauthorized;
-            $response.outputs.res.body = "".to_string();
-            return;
+            let mut response = FunctionsResponse::default();
+            response.outputs.res.status_code = HttpStatusCode::Unauthorized;
+            return Ok(response);
         }
     };
 }
 
 #[macro_export]
 macro_rules! require_auth_redirect {
-    ($request_data:expr,$response:expr) => {
+    ($request_data:expr) => {
         if $request_data.user_id().is_none() {
+            let mut response = FunctionsResponse::default();
             let login_url =
                 "/.auth/login/aad?post_login_redirect_url=".to_owned() + $request_data.url.as_str();
-            $response.outputs.res.status_code = HttpStatusCode::Found;
-            $response.outputs.res.body = login_url.to_string();
-            $response
+            response.outputs.res.status_code = HttpStatusCode::Found;
+            response.outputs.res.body = login_url.to_string();
+            response
                 .outputs
                 .res
                 .headers
                 .insert("Location".to_string(), login_url.to_string());
-            return;
+            return Ok(response);
         }
     };
 }
@@ -44,7 +45,7 @@ pub struct HttpPayload {
 
 impl HttpPayload {
     pub fn method_name(&self) -> &str {
-        return self.metadata.sys.method_name.as_str();
+        self.metadata.sys.method_name.as_str()
     }
 }
 
@@ -80,18 +81,12 @@ pub struct DataRequest {
 impl DataRequest {
     pub fn user_id(&self) -> Option<String> {
         let header_user_id = self.headers.get("X-MS-CLIENT-PRINCIPAL-ID");
-        match header_user_id {
-            Some(header_user_id) => return Some(header_user_id[0].clone()),
-            None => return None, // Return None if user id not found
-        };
+        header_user_id.map(|header_user_id| header_user_id[0].clone())
     }
 
     pub fn user_name(&self) -> Option<String> {
         let header_username = self.headers.get("X-MS-CLIENT-PRINCIPAL-NAME");
-        match header_username {
-            Some(header_username) => return Some(header_username[0].clone()),
-            None => return None, // Return None if username not found
-        };
+        header_username.map(|header_username| header_username[0].clone())
     }
 }
 
