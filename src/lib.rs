@@ -7,19 +7,18 @@ use hyper::{Body, Request, Response, Server};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::error::Error;
 use std::future::Future;
 
 use self::event_hub::EventHubPayload;
 use self::http::HttpPayload;
 use self::timer::TimerPayload;
 
-pub async fn azure_func_init<F, S, R, E>(handler: F, env: S)
+pub async fn azure_func_init<F, S, R>(handler: F, env: S)
 where
     F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
     S: Clone + std::marker::Send + 'static,
-    R: Future<Output = Result<FunctionsResponse, E>> + std::marker::Send + 'static,
-    E: Display + 'static,
+    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
     let port_key = "FUNCTIONS_CUSTOMHANDLER_PORT";
     let port: u16 = match std::env::var(port_key) {
@@ -54,7 +53,7 @@ pub fn log_error(error: String) -> Response<Body> {
 
 // This is our service handler. It receives a Request, routes on its
 // path, and returns a Future of a Response.
-pub async fn request_handler<F, S, R, E>(
+pub async fn request_handler<F, S, R>(
     request: Request<Body>,
     handler: F,
     env: S,
@@ -62,29 +61,28 @@ pub async fn request_handler<F, S, R, E>(
 where
     F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy,
     S: Clone + std::marker::Send + 'static,
-    R: Future<Output = Result<FunctionsResponse, E>> + std::marker::Send + 'static,
-    E: Display + 'static,
+    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
     let bytes = match hyper::body::to_bytes(request.into_body()).await {
         Ok(bytes) => bytes,
-        Err(error) => return Ok(log_error(error.to_string())),
+        Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
     let vector: Vec<u8> = bytes.to_vec();
     // println!("{:?}", std::str::from_utf8(&vector).unwrap());
     let deserialize_request: FunctionPayload = match serde_json::from_slice(&vector) {
         Ok(deserialize_request) => deserialize_request,
-        Err(error) => return Ok(log_error(error.to_string())),
+        Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
     let response = match handler(deserialize_request, env).await {
         Ok(response) => response,
-        Err(error) => return Ok(log_error(error.to_string())),
+        Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
     let response_string: String = match serde_json::to_string(&response) {
         Ok(response_string) => response_string,
-        Err(error) => return Ok(log_error(error.to_string())),
+        Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
     //println!("{}", response_string);
@@ -94,7 +92,7 @@ where
         .body(Body::from(response_string))
     {
         Ok(hyper_response) => hyper_response,
-        Err(error) => return Ok(log_error(error.to_string())),
+        Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
     Ok(hyper_response)
