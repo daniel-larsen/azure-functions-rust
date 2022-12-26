@@ -18,3 +18,8 @@ serde_json = "1.0"
 url = { version = "2.3", features = ["serde"] }
 time = { version = "0.3", features = ["serde-human-readable"]}
 log = "0.4"
+
+[features]
+# http trigger is included by default
+timer = []
+event-hub = []

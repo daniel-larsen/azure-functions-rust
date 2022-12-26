@@ -1,5 +1,7 @@
+#[cfg(feature = "event-hub")]
 pub mod event_hub;
 pub mod http;
+#[cfg(feature = "timer")]
 pub mod timer;
 
 use hyper::service::{make_service_fn, service_fn};
@@ -10,8 +12,10 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
 
+#[cfg(feature = "event-hub")]
 use self::event_hub::EventHubPayload;
 use self::http::HttpPayload;
+#[cfg(feature = "timer")]
 use self::timer::TimerPayload;
 
 pub async fn azure_func_init<F, S, R>(handler: F, env: S)
@@ -102,7 +106,9 @@ where
 #[serde(untagged)]
 pub enum FunctionPayload {
     HttpData(HttpPayload),
+    #[cfg(feature = "event-hub")]
     EventHubData(EventHubPayload),
+    #[cfg(feature = "timer")]
     TimerData(TimerPayload),
 }
 
