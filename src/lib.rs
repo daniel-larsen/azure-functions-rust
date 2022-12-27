@@ -47,7 +47,7 @@ where
     }
 }
 
-pub fn log_error(error: String) -> Response<Body> {
+fn log_error(error: String) -> Response<Body> {
     Response::builder()
         .status(200)
         .header("content-type", "application/json")
@@ -57,7 +57,7 @@ pub fn log_error(error: String) -> Response<Body> {
 
 // This is our service handler. It receives a Request, routes on its
 // path, and returns a Future of a Response.
-pub async fn request_handler<F, S, R>(
+async fn request_handler<F, S, R>(
     request: Request<Body>,
     handler: F,
     env: S,
@@ -146,6 +146,18 @@ impl FunctionsResponse {
     {
         self.outputs.res.body = body.into();
         self
+    }
+
+    pub fn body_json<T>(mut self, value: &T) -> Result<Self, serde_json::Error>
+    where
+        T: Sized + Serialize,
+    {
+        self.outputs.res.body = serde_json::to_string(value)?;
+        self.outputs.res.headers.insert(
+            String::from("Content-Type"),
+            String::from("application/json"),
+        );
+        Ok(self)
     }
 }
 
