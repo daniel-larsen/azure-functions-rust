@@ -4,6 +4,8 @@
   </div>
 </div>
 
+> This project is not an official Microsoft product.
+
 ## Why Azure Functions and Rust
 
 Reduced cold start latency
@@ -75,3 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 ```
+
+> Credit \
+> Azure and the Azure Functions logo are property of the Microsoft Corporation.\
+> Rust and the Rust logo are property of the Rust Foundation.
