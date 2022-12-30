@@ -1,6 +1,8 @@
-# Azure Functions handler in Rust (Work in Progress)
-
-This repository contains an Azure Functions handler for Rust.
+<div>
+  <div align="center" style="display: block; text-align: center;">
+    <img src="https://raw.githubusercontent.com/daniel-larsen/azure-functions-rust/main/assets/azurefunctions-rust.svg" height="150" />
+  </div>
+</div>
 
 ## Why Azure Functions and Rust
 
