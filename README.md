@@ -36,33 +36,34 @@ Azure Functions benefits
 ```toml
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
-azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust", branch = "main" }
+azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust" }
 
 ```
 
 2. Initalize the handler from your main.rs file.
 
 ```rust
-use azure_functions::{azure_func_init, FunctionPayload, FunctionsResponse, HttpStatusCode};
-use std::fmt::Error;
+use azure_functions::{
+    azure_func_init, http::HttpPayload, FunctionPayload, FunctionsResponse, HttpStatusCode,
+};
+use std::error::Error;
 
-async fn handler(payload: FunctionPayload, _env: Environment) -> Result<FunctionsResponse, Error> {
-    let mut response = FunctionsResponse::default();
+fn my_http_func(payload: HttpPayload) -> Result<FunctionsResponse, Box<dyn Error>> {
+    let response =
+        FunctionsResponse::http(HttpStatusCode::Ok).body(payload.metadata.sys.utc_now.to_string());
+    Ok(response)
+}
 
+async fn handler(
+    payload: FunctionPayload,
+    _env: Environment,
+) -> Result<FunctionsResponse, Box<dyn Error>> {
     match payload {
         FunctionPayload::HttpData(payload) => match payload.method_name() {
-            "HttpTrigger" => {
-                response.logs_new("This message will be visible in Application Insights");
-                response.outputs.res.body = payload.metadata.sys.utc_now.to_string();
-                response.outputs.res.status_code = HttpStatusCode::Ok;
-            }
-            _ => response.outputs.res.body = "path not found".to_string(),
+            "MyHttpFunc" => my_http_func(payload),
+            _ => Ok(FunctionsResponse::http(HttpStatusCode::NotFound).body("path not found")),
         },
-        FunctionPayload::EventHubData(_payload) => {}
-
-        FunctionPayload::TimerData(_payload) => {}
-    };
-    return Ok(response);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -78,6 +79,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 ```
 
-> Credit \
+> Credits \
 > Azure and the Azure Functions logo are property of the Microsoft Corporation.\
 > Rust and the Rust logo are property of the Rust Foundation.

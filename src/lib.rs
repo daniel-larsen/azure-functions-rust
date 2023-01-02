@@ -1,5 +1,6 @@
 #[cfg(feature = "event-hub")]
 pub mod event_hub;
+#[cfg(feature = "http")]
 pub mod http;
 #[cfg(feature = "timer")]
 pub mod timer;
@@ -11,9 +12,14 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
+#[cfg(feature = "tracing")]
+use tracing::{info, Level};
+#[cfg(feature = "tracing")]
+use tracing_subscriber;
 
 #[cfg(feature = "event-hub")]
 use self::event_hub::EventHubPayload;
+#[cfg(feature = "http")]
 use self::http::HttpPayload;
 #[cfg(feature = "timer")]
 use self::timer::TimerPayload;
@@ -73,7 +79,6 @@ where
     };
 
     let vector: Vec<u8> = bytes.to_vec();
-    // println!("{:?}", std::str::from_utf8(&vector).unwrap());
     let deserialize_request: FunctionPayload = match serde_json::from_slice(&vector) {
         Ok(deserialize_request) => deserialize_request,
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
@@ -89,7 +94,6 @@ where
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
-    //println!("{}", response_string);
     let hyper_response = match Response::builder()
         .status(200)
         .header("content-type", "application/json")
@@ -105,6 +109,7 @@ where
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum FunctionPayload {
+    #[cfg(feature = "http")]
     HttpData(HttpPayload),
     #[cfg(feature = "event-hub")]
     EventHubData(EventHubPayload),

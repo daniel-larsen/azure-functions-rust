@@ -12,14 +12,17 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
-hyper = { version = "0.14", features = ["server", "http2", "tcp"] }
+hyper = { version = "0.14", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 url = { version = "2.3", features = ["serde"] }
 time = { version = "0.3", features = ["serde-human-readable"]}
-log = "0.4"
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
 
 [features]
-# http trigger is included by default
+default = ["http"] # http trigger is included by default
+tracing = ["dep:tracing", "tracing-subscriber"]
+http = []
 timer = []
 event-hub = []
