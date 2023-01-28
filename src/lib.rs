@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 #[cfg(feature = "event-hub")]
 pub mod event_hub;
 #[cfg(feature = "http")]
