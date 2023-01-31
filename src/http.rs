@@ -62,6 +62,18 @@ pub enum HttpMethod {
     Get,
     #[serde(rename = "POST")]
     Post,
+    #[serde(rename = "DELETE")]
+    Delete,
+    #[serde(rename = "HEAD")]
+    Head,
+    #[serde(rename = "PATCH")]
+    Patch,
+    #[serde(rename = "PUT")]
+    Put,
+    #[serde(rename = "OPTIONS")]
+    Options,
+    #[serde(rename = "TRACE")]
+    Trace,
 }
 
 #[derive(Deserialize)]
