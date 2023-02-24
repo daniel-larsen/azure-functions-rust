@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "tracing")]
+pub mod custom_tracing;
 #[cfg(feature = "event-hub")]
 pub mod event_hub;
 #[cfg(feature = "http")]
@@ -15,9 +17,9 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
 #[cfg(feature = "tracing")]
-use tracing::{info, Level};
+use tracing::instrument::WithSubscriber;
 #[cfg(feature = "tracing")]
-use tracing_subscriber;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 
 #[cfg(feature = "event-hub")]
 use self::event_hub::EventHubPayload;
@@ -32,6 +34,9 @@ where
     S: Clone + std::marker::Send + 'static,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
+    #[cfg(feature = "tracing")]
+    let _ = tracing_log::LogTracer::init();
+
     let port_key = "FUNCTIONS_CUSTOMHANDLER_PORT";
     let port: u16 = match std::env::var(port_key) {
         Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
@@ -63,8 +68,6 @@ fn log_error(error: String) -> Response<Body> {
         .unwrap()
 }
 
-// This is our service handler. It receives a Request, routes on its
-// path, and returns a Future of a Response.
 async fn request_handler<F, S, R>(
     request: Request<Body>,
     handler: F,
@@ -75,6 +78,10 @@ where
     S: Clone + std::marker::Send + 'static,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
+    let events = custom_tracing::CustomLayer::new();
+    #[cfg(feature = "tracing")]
+    let subscriber = tracing_subscriber::registry().with(events.clone());
+
     let bytes = match hyper::body::to_bytes(request.into_body()).await {
         Ok(bytes) => bytes,
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
@@ -86,7 +93,25 @@ where
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
-    let response = match handler(deserialize_request, env).await {
+    #[cfg(feature = "tracing")]
+    let response = match handler(deserialize_request, env)
+        .with_subscriber(subscriber)
+        .await
+    {
+        Ok(mut response) => {
+            response.logs = events.get();
+            response
+        }
+        Err(error) => {
+            let mut response = FunctionsResponse::default().body("An error occurred while processing the request, check the log for a detailed error message.");
+            response.logs = events.get();
+            response.logs.push(format!("{:#?}", error));
+            response
+        }
+    };
+
+    #[cfg(not(feature = "tracing"))]
+    let mut response = match handler(deserialize_request, env).await {
         Ok(response) => response,
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
@@ -134,13 +159,6 @@ pub struct FunctionsResponse {
 }
 
 impl FunctionsResponse {
-    pub fn logs_new<T>(&mut self, message: T)
-    where
-        T: Into<String>,
-    {
-        self.logs.push(message.into());
-    }
-
     pub fn http(status_code: HttpStatusCode) -> Self {
         let mut response = FunctionsResponse::default();
         response.outputs.res.status_code = status_code;

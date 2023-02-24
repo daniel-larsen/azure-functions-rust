@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
-use serde::Deserialize;
-use time::OffsetDateTime;
-
 use crate::InputBinding;
+use serde::Deserialize;
+use std::collections::HashMap;
+use time::OffsetDateTime;
 
 #[derive(Deserialize)]
 pub struct TimerPayload {
@@ -60,9 +58,9 @@ pub struct TimerPayloadMetadata {
 #[derive(Deserialize)]
 pub struct TimerPayloadMetadataSys {
     #[serde(rename = "MethodName")]
-    pub method_name: String, // "MethodName": "checkCertificates",
+    pub method_name: String,
     #[serde(rename = "UtcNow", with = "time::serde::rfc3339")]
-    pub utc_now: OffsetDateTime, // "UtcNow": "2022-10-26T03:32:55.7362251Z",
+    pub utc_now: OffsetDateTime,
     #[serde(rename = "RandGuid")]
-    pub rand_guid: String, // "RandGuid": "7492f2df-883f-4777-b799-bdfc267fc0e7"
+    pub rand_guid: uuid::Uuid,
 }
