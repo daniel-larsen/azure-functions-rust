@@ -1,0 +1,25 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  library:
+    name: Build library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - run: cargo build --release --all-features
+
+  example1:
+    name: Build http trigger example
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - run: cd ./examples/http_trigger
+      - run: cargo build
