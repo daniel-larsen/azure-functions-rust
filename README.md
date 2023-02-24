@@ -37,6 +37,8 @@ Azure Functions benefits
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
 azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust" }
+tracing = "0.1"
+log = "0.4"
 
 ```
 
