@@ -1,0 +1,10 @@
+[package]
+name = "handler"
+version = "0.1.0"
+authors = ["Daniel Larsen"]
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
+azure_functions = { path = "../../", default-features = false, features = ["tracing", "timer"] }
+log = "0.4"
