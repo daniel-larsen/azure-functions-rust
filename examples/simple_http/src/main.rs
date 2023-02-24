@@ -4,6 +4,10 @@ use azure_functions::{
 use std::error::Error;
 
 fn my_http_func(payload: HttpPayload) -> Result<FunctionsResponse, Box<dyn Error>> {
+    // both tracing and log messages are captured
+    tracing::info!("This will be logged to Application Insights");
+    log::info!("This will also be logged to Application Insights");
+
     let response =
         FunctionsResponse::http(HttpStatusCode::Ok).body(payload.metadata.sys.utc_now.to_string());
     Ok(response)
@@ -15,7 +19,7 @@ async fn handler(
 ) -> Result<FunctionsResponse, Box<dyn Error>> {
     match payload {
         FunctionPayload::HttpData(payload) => match payload.method_name() {
-            "MyHttpFunc" => Ok(FunctionsResponse::http(HttpStatusCode::Ok)),
+            "MyHttpFunc" => my_http_func(payload),
             _ => Ok(FunctionsResponse::http(HttpStatusCode::NotFound).body("path not found")),
         },
     }
