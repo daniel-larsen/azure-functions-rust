@@ -49,6 +49,8 @@ use azure_functions::{
 use std::error::Error;
 
 fn my_http_func(payload: HttpPayload) -> Result<FunctionsResponse, Box<dyn Error>> {
+    tracing::info!("This will be logged to Application Insights");
+    log::info!("This will also be logged to Application Insights");
     let response =
         FunctionsResponse::http(HttpStatusCode::Ok).body(payload.metadata.sys.utc_now.to_string());
     Ok(response)

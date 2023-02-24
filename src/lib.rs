@@ -1,5 +1,23 @@
 #![forbid(unsafe_code)]
 
+//! # Azure Functions
+//!
+//! Azure Functions handler written in safe Rust.
+//!
+//! ## Overview
+//!
+//! - Async function execution
+//! - Support for common triggers
+//! - Tracing to Application Insights
+//!
+//! ## Crate Feature Flags
+//!
+//! - `default`: Enables tracing and http.
+//! - `tracing`: Enables tracing which connects to Application Insights.
+//! - `http`: Enables HTTP function triggers.
+//! - `timer`: Enables timer function triggers.
+//! - `event-hub`: Enables event hub function triggers.
+
 #[cfg(feature = "tracing")]
 pub mod custom_tracing;
 #[cfg(feature = "event-hub")]
