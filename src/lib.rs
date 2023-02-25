@@ -96,7 +96,7 @@ where
     S: Clone + std::marker::Send + 'static,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
-    let events = custom_tracing::CustomLayer::new();
+    let events = custom_tracing::CustomLayer::new(tracing::Level::INFO);
     #[cfg(feature = "tracing")]
     let subscriber = tracing_subscriber::registry().with(events.clone());
 
@@ -129,7 +129,7 @@ where
     };
 
     #[cfg(not(feature = "tracing"))]
-    let mut response = match handler(deserialize_request, env).await {
+    let response = match handler(deserialize_request, env).await {
         Ok(response) => response,
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };

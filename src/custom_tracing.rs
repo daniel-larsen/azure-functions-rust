@@ -1,18 +1,23 @@
 use std::sync::{Arc, Mutex};
+use tracing::Level;
 use tracing_subscriber::Layer;
 
 #[derive(Clone)]
-pub struct CustomLayer(Arc<Mutex<Vec<String>>>);
+pub struct CustomLayer {
+    events: Arc<Mutex<Vec<String>>>,
+    level: Level,
+}
 
 impl CustomLayer {
-    pub fn new() -> Self {
+    pub fn new(level: Level) -> Self {
         Self {
-            0: Arc::new(Mutex::new(Vec::new())),
+            events: Arc::new(Mutex::new(Vec::new())),
+            level,
         }
     }
 
     pub fn get(&self) -> Vec<String> {
-        self.0.lock().unwrap().to_vec()
+        self.events.lock().unwrap().to_vec()
     }
 }
 
@@ -25,6 +30,8 @@ where
         event: &tracing::Event<'_>,
         _ctx: tracing_subscriber::layer::Context<'_, S>,
     ) {
-        self.0.lock().unwrap().push(format!("{:#?}", event));
+        if *event.metadata().level() > self.level {
+            self.events.lock().unwrap().push(format!("{:#?}", event));
+        }
     }
 }

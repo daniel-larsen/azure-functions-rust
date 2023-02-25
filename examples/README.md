@@ -1,6 +1,6 @@
 ## Examples
 
-- http_trigger: responds with the current time to get or post request
+- http_trigger: responds with the current time to get or post request.
 - timer_trigger: logs a message every minute.
 
 ## Build and Run
