@@ -191,6 +191,18 @@ impl FunctionsResponse {
         self
     }
 
+    pub fn body_html<T>(mut self, value: &T) -> Result<Self, serde_json::Error>
+    where
+        T: ?Sized + Serialize,
+    {
+        self.outputs.res.body = serde_json::to_string(value)?;
+        self.outputs
+            .res
+            .headers
+            .insert(String::from("Content-Type"), String::from("text/html"));
+        Ok(self)
+    }
+
     pub fn body_json<T>(mut self, value: &T) -> Result<Self, serde_json::Error>
     where
         T: ?Sized + Serialize,

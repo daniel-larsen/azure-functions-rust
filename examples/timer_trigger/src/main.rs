@@ -5,7 +5,7 @@ use std::error::Error;
 
 fn my_timer_func(_payload: TimerPayload) -> Result<FunctionsResponse, Box<dyn Error>> {
     // both tracing and log messages are captured
-    log::info!("This will also be logged to Application Insights");
+    log::info!("This will be logged to Application Insights");
 
     Ok(FunctionsResponse::default())
 }

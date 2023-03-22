@@ -31,14 +31,12 @@ Azure Functions benefits
 
 ## Installation
 
-1. Add azure-functions-rust to your Cargo.toml file. Make sure tokio and hyper are all included.
+1. Add azure-functions-rust to your Cargo.toml file. Make sure tokio is also included.
 
 ```toml
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros", "rt-multi-thread"] }
 azure_functions = { git = "https://github.com/daniel-larsen/azure-functions-rust" }
-tracing = "0.1"
-log = "0.4"
 
 ```
 
