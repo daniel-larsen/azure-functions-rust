@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "type": "eventHubTrigger",
+      "name": "event",
+      "direction": "in",
+      "eventHubName": "iothub-ehub-larsenfarm-1991863-249d1425ac",
+      "connection": "EventHubConnection"
+    }
+  ]
+}

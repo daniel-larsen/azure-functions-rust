@@ -32,3 +32,12 @@ jobs:
       - run: curl https://sh.rustup.rs -sSf | sh -s -- -y
       - run: cd ./examples/timer_trigger
       - run: cargo build
+
+  example3:
+    name: Build event hub trigger example
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - run: cd ./examples/event_hub_trigger
+      - run: cargo build
