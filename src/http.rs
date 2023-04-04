@@ -8,8 +8,8 @@ use url::Url;
 macro_rules! require_auth {
     ($request_data:expr) => {
         if $request_data.user_id().is_none() {
-            let mut response = FunctionsResponse::default();
-            response.outputs.res.status_code = HttpStatusCode::Unauthorized;
+            let mut response = azure_functions::FunctionsResponse::default();
+            response.outputs.res.status_code = azure_functions::HttpStatusCode::Unauthorized;
             return Ok(response);
         }
     };
@@ -19,10 +19,10 @@ macro_rules! require_auth {
 macro_rules! require_auth_redirect {
     ($request_data:expr) => {
         if $request_data.user_id().is_none() {
-            let mut response = FunctionsResponse::default();
+            let mut response = azure_functions::FunctionsResponse::default();
             let login_url =
                 "/.auth/login/aad?post_login_redirect_url=".to_owned() + $request_data.url.as_str();
-            response.outputs.res.status_code = HttpStatusCode::Found;
+            response.outputs.res.status_code = azure_functions::HttpStatusCode::Found;
             response.outputs.res.body = login_url.to_string();
             response
                 .outputs
