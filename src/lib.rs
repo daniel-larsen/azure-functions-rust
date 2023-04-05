@@ -183,6 +183,17 @@ impl FunctionsResponse {
         response
     }
 
+    pub fn redirect(redirect_url: String) -> Self {
+        let mut response = FunctionsResponse::default();
+        response.outputs.res.status_code = HttpStatusCode::Found;
+        response
+            .outputs
+            .res
+            .headers
+            .insert(String::from("Location"), redirect_url);
+        response
+    }
+
     pub fn body<S>(mut self, body: S) -> Self
     where
         S: Into<String>,
