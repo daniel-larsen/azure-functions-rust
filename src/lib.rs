@@ -53,7 +53,7 @@ use self::http::HttpPayload;
 #[cfg(feature = "timer")]
 use self::timer::TimerPayload;
 
-pub async fn azure_func_init<F, S, R>(handler: F, env: S)
+pub async fn azure_func_init<F, S, R>(handler: F, env: S) -> Result<(), Box<dyn Error>>
 where
     F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
     S: Clone + std::marker::Send + 'static,
@@ -67,12 +67,11 @@ where
         Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
         Err(_) => 3000,
     };
-
     let addr: SocketAddr = ([127, 0, 0, 1], port).into();
-    let listener = TcpListener::bind(addr).await.unwrap();
+    let listener = TcpListener::bind(addr).await?;
 
     loop {
-        let (tcp, _) = listener.accept().await.unwrap();
+        let (tcp, _) = listener.accept().await?;
         let io = TokioIo::new(tcp);
 
         let env = env.clone();
