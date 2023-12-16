@@ -30,10 +30,10 @@ pub mod timer;
 use http_body_util::{Full, BodyExt};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Incoming, Bytes};
-use hyper::server::conn::http2;
+use hyper::server::conn::http1;
 use hyper::service::service_fn;
-use hyper::{body::Body, Request, Response};
-use hyper_util::rt::{TokioIo, TokioExecutor};
+use hyper::{Request, Response};
+use hyper_util::rt::TokioIo;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::net::TcpListener;
@@ -78,7 +78,7 @@ where
         let env = env.clone();
 
         tokio::task::spawn(async move {
-            if let Err(err) = http2::Builder::new(TokioExecutor::new()).serve_connection(io, service_fn(move |req| {
+            if let Err(err) = http1::Builder::new().serve_connection(io, service_fn(move |req| {
                 request_handler(req, handler, env.clone())
             })).await {
                 println!("Failed to serve connection: {:?}", err);
