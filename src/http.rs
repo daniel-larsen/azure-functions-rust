@@ -55,7 +55,7 @@ pub struct HttpPayloadData {
     pub inputs: HashMap<String, InputBinding>,
 }
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone, Copy, PartialEq)]
 pub enum HttpMethod {
     #[serde(rename = "GET")]
     Get,
