@@ -1,6 +1,6 @@
 [package]
 name = "azure_functions"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Daniel Larsen"]
 description = "Azure Functions handler in Rust"
 repository = "https://github.com/daniel-larsen/azure-functions-rust"
@@ -12,16 +12,19 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
-hyper = { version = "0.14", features = ["full"] }
+tokio = { version = "1", features = ["net"] }
+hyper = { version = "1", features = ["http1", "server"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["http1", "tokio"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-url = { version = "2.3", features = ["serde"],  optional = true }
+url = { version = "2.5", features = ["serde"],  optional = true }
 time = { version = "0.3", features = ["serde-human-readable"], optional = true }
-uuid = { version = "1.3", features = ["serde"], optional = true }
+uuid = { version = "1.6", features = ["serde"], optional = true }
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 tracing-futures = { version = "0.2", optional = true }
-tracing-log = { version = "0.1", optional = true }
+tracing-log = { version = "0.2", optional = true }
 
 [features]
 default = ["http", "tracing"] # http trigger and tracing are included by default

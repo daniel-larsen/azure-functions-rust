@@ -27,13 +27,20 @@ pub mod http;
 #[cfg(feature = "timer")]
 pub mod timer;
 
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Request, Response, Server};
+use http_body_util::{Full, BodyExt};
+use http_body_util::combinators::BoxBody;
+use hyper::body::{Incoming, Bytes};
+use hyper::server::conn::http1;
+use hyper::service::service_fn;
+use hyper::{Request, Response};
+use hyper_util::rt::TokioIo;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio::net::TcpListener;
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
+use std::net::SocketAddr;
 #[cfg(feature = "tracing")]
 use tracing::instrument::WithSubscriber;
 #[cfg(feature = "tracing")]
@@ -46,7 +53,7 @@ use self::http::HttpPayload;
 #[cfg(feature = "timer")]
 use self::timer::TimerPayload;
 
-pub async fn azure_func_init<F, S, R>(handler: F, env: S)
+pub async fn azure_func_init<F, S, R>(handler: F, env: S) -> Result<(), Box<dyn Error>>
 where
     F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
     S: Clone + std::marker::Send + 'static,
@@ -60,37 +67,44 @@ where
         Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
         Err(_) => 3000,
     };
+    let addr: SocketAddr = ([127, 0, 0, 1], port).into();
+    let listener = TcpListener::bind(addr).await?;
 
-    let addr = ([127, 0, 0, 1], port).into();
-    let service = make_service_fn(move |_| {
+    loop {
+        let (tcp, _) = listener.accept().await?;
+        let io = TokioIo::new(tcp);
+
         let env = env.clone();
-        async move {
-            Ok::<_, hyper::Error>(service_fn(move |req| {
-                request_handler(req, handler, env.clone())
-            }))
-        }
-    });
-    let server = Server::bind(&addr).serve(service);
 
-    // Run this server for... forever!
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+        tokio::task::spawn(async move {
+            if let Err(err) = http1::Builder::new().serve_connection(io, service_fn(move |req| {
+                request_handler(req, handler, env.clone())
+            })).await {
+                println!("Failed to serve connection: {:?}", err);
+            }
+        });
     }
 }
 
-fn log_error(error: String) -> Response<Body> {
+fn log_error(error: String) -> Response<BoxBody<Bytes, hyper::Error>> {
     Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(json!({"Outputs":{"res":{"body":"An error occurred while processing the request, check the log for a detailed error message.","statusCode":"400","headers":{}}},"Logs":[error]}).to_string()))
+        .body(full(json!({"Outputs":{"res":{"body":"An error occurred while processing the request, check the log for a detailed error message.","statusCode":"400","headers":{}}},"Logs":[error]}).to_string()))
         .unwrap()
 }
 
+fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
+    Full::new(chunk.into())
+        .map_err(|never| match never {})
+        .boxed()
+}
+
 async fn request_handler<F, S, R>(
-    request: Request<Body>,
+    request: Request<Incoming>,
     handler: F,
     env: S,
-) -> Result<Response<Body>, hyper::Error>
+) -> Result<Response<BoxBody<Bytes, hyper::Error>>, hyper::Error>
 where
     F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy,
     S: Clone + std::marker::Send + 'static,
@@ -100,8 +114,8 @@ where
     #[cfg(feature = "tracing")]
     let subscriber = tracing_subscriber::registry().with(events.clone());
 
-    let bytes = match hyper::body::to_bytes(request.into_body()).await {
-        Ok(bytes) => bytes,
+    let bytes = match request.collect().await {
+        Ok(bytes) => bytes.to_bytes(),
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
@@ -142,7 +156,7 @@ where
     let hyper_response = match Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(response_string))
+        .body(full(response_string))
     {
         Ok(hyper_response) => hyper_response,
         Err(error) => return Ok(log_error(format!("{:#?}", error))),

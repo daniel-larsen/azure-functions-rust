@@ -1,8 +1,10 @@
 use crate::InputBinding;
-use serde::Deserialize;
+use hyper::{HeaderMap, header::HeaderName};
+use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use time::OffsetDateTime;
 use url::Url;
+use std::str::FromStr;
 
 #[macro_export]
 macro_rules! require_auth {
@@ -55,7 +57,7 @@ pub struct HttpPayloadData {
     pub inputs: HashMap<String, InputBinding>,
 }
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone, Copy, PartialEq)]
 pub enum HttpMethod {
     #[serde(rename = "GET")]
     Get,
@@ -83,20 +85,20 @@ pub struct DataRequest {
     pub method: HttpMethod,
     #[serde(rename = "Query")]
     pub query: HashMap<String, String>,
-    #[serde(rename = "Headers")]
-    pub headers: HashMap<String, Vec<String>>,
+    #[serde(rename = "Headers", deserialize_with = "deserialize_header_map")]
+    pub headers: HeaderMap<Vec<String>>,
     #[serde(rename = "Body")]
     pub body: Option<String>,
 }
 
 impl DataRequest {
     pub fn user_id(&self) -> Option<String> {
-        let header_user_id = self.headers.get("X-MS-CLIENT-PRINCIPAL-ID");
+        let header_user_id = self.headers.get("x-ms-client-principal-id");
         header_user_id.map(|header_user_id| header_user_id[0].clone())
     }
 
     pub fn user_name(&self) -> Option<String> {
-        let header_username = self.headers.get("X-MS-CLIENT-PRINCIPAL-NAME");
+        let header_username = self.headers.get("x-ms-client-principal-name");
         header_username.map(|header_username| header_username[0].clone())
     }
 }
@@ -114,4 +116,16 @@ pub struct HttpPayloadMetadataSys {
     pub utc_now: OffsetDateTime,
     #[serde(rename = "RandGuid")]
     pub rand_guid: uuid::Uuid,
+}
+
+fn deserialize_header_map<'de, D>(deserializer: D) -> Result<HeaderMap<Vec<String>>, D::Error>
+where D: Deserializer<'de> {
+    let map: HashMap<String, Vec<String>> = HashMap::deserialize(deserializer)?;
+    let mut header_map: HeaderMap<Vec<String>> = HeaderMap::<Vec<String>>::default();
+
+    for header in map.into_iter() {
+        header_map.append(HeaderName::from_str(&header.0).map_err(serde::de::Error::custom)?, header.1);
+    };
+    
+    Ok(header_map)
 }
