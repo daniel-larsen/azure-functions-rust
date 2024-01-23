@@ -1,5 +1,5 @@
 {
   "azurite.location": ".azurite",
   "explorer.fileNesting.enabled": true,
-  "explorer.fileNesting.expand": false
+  "explorer.fileNesting.expand": false,
 }

@@ -1,6 +1,5 @@
 use crate::payloads::http::HttpMethod;
-
-use self::http::HttpTriggerParams;
+use self::http::HttpBindingParams;
 
 #[cfg(feature = "event-hub")]
 pub mod event_hub;
@@ -9,20 +8,20 @@ pub mod http;
 #[cfg(feature = "timer")]
 pub mod timer;
 
-pub enum Trigger {
+pub enum InputBinding {
     #[cfg(feature = "http")]
-    Http(http::HttpTriggerParams),
+    Http(http::HttpBindingParams),
     #[cfg(feature = "event-hub")]
     EventHub(),
     #[cfg(feature = "timer")]
     Timer(),
 }
 
-impl Trigger {
+impl InputBinding {
     pub fn http<S>(route: S, methods: Vec<HttpMethod>) -> Self
     where S: Into<String>
     {
-        let param = HttpTriggerParams{route: route.into(), methods};
+        let param = HttpBindingParams{route: route.into(), methods};
         Self::Http(param)
     }
 }

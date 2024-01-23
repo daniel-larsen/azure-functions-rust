@@ -9,5 +9,6 @@
 		"description": {
 			"defaultExecutablePath": "target/debug/http-trigger-example.exe"
 		}
-	}
+	},
+	"watchDirectories": ["/"]
 }

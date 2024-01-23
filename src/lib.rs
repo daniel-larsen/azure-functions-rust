@@ -19,7 +19,7 @@
 //! - `event-hub`: Enables event hub function triggers.
 
 pub mod payloads;
-pub mod triggers;
+pub mod bindings;
 pub mod utils;
 pub mod response;
 
@@ -35,9 +35,10 @@ use payloads::FunctionPayload;
 use serde_json::json;
 use tokio::net::TcpListener;
 use response::FunctionsResponse;
-use triggers::Trigger;
+use bindings::InputBinding;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fs;
 use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -60,7 +61,7 @@ where
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
-    functions: HashMap<String, (F, Trigger)>,
+    functions: HashMap<String, (F, InputBinding)>,
     env: S,
 }
 
@@ -95,13 +96,10 @@ where
 
     pub async fn start(self) -> Result<(), Box<dyn Error>>
     {
-        // setup_fs(self);
-
         #[cfg(feature = "tracing")]
         let _ = tracing_log::LogTracer::init();
 
-        let port_key = "FUNCTIONS_CUSTOMHANDLER_PORT";
-        let port: u16 = match std::env::var(port_key) {
+        let port: u16 = match std::env::var("FUNCTIONS_CUSTOMHANDLER_PORT") {
             Ok(val) => val.parse().expect("Custom Handler port is not a number!"),
             Err(_) => 3000,
         };
@@ -124,7 +122,7 @@ where
         }
     }
 
-    pub fn trigger<N>(self, name: N, handler: F, trigger: Trigger) -> Self
+    pub fn trigger<N>(self, name: N, handler: F, trigger: InputBinding) -> Self
         where N: Into<String>
     {
         match Arc::try_unwrap(self.inner) {
@@ -137,6 +135,18 @@ where
             }
             Err(_) => panic!("could not add endpoint")
         }
+    }
+
+    pub fn update_bindings(self) -> Result<(), Box<dyn Error>>
+    {
+        for function in self.inner.functions.iter() {
+            fs::create_dir(function.0)?;
+            let json = match &function.1.1 {
+                InputBinding::Http(binding) => binding.to_string()
+            };
+            fs::write(format!("./{}/function.json", function.0), json)?;
+        }
+        Ok(())
     }
 }
 
@@ -153,22 +163,6 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
         .map_err(|never| match never {})
         .boxed()
 }
-
-// fn setup_fs<F, S, R>(handlers: AzureFuncHandler<F, S, R>) -> Result<(), Box<dyn Error>> where
-// F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-// S: Clone + std::marker::Send + 'static + std::marker::Sync,
-// R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
-// {
-//     let files = fs::read_dir(".")?;
-
-
-//     for file in files {
-//         let full_path = file?.path();
-//         if full_path.is_dir() && full_path.file_name().unwrap().to_str()
-//     }
-
-//     Ok(())
-// }
 
 async fn request_handler<F, S, R>(
     request: Request<Incoming>,

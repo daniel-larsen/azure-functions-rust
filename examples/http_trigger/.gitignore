@@ -2,3 +2,4 @@
 **/*.rs.bk
 local.settings.json
 .azurite
+FUNC-*
