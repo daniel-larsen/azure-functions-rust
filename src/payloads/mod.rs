@@ -1,22 +1,21 @@
 use serde::Deserialize;
-use crate::triggers;
 
 #[cfg(feature = "event-hub")]
-use triggers::event_hub::EventHubPayload;
+pub mod event_hub;
 #[cfg(feature = "http")]
-use triggers::http::HttpPayload;
+pub mod http;
 #[cfg(feature = "timer")]
-use triggers::timer::TimerPayload;
+pub mod timer;
 
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum FunctionPayload {
     #[cfg(feature = "http")]
-    HttpData(HttpPayload),
+    HttpData(http::HttpPayload),
     #[cfg(feature = "event-hub")]
-    EventHubData(EventHubPayload),
+    EventHubData(event_hub::EventHubPayload),
     #[cfg(feature = "timer")]
-    TimerData(TimerPayload),
+    TimerData(timer::TimerPayload),
 }
 
 #[derive(Deserialize)]

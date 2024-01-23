@@ -18,9 +18,10 @@
 //! - `timer`: Enables timer function triggers.
 //! - `event-hub`: Enables event hub function triggers.
 
+pub mod payloads;
 pub mod triggers;
 pub mod utils;
-pub mod payload;
+pub mod response;
 
 use crate::FunctionPayload::HttpData;
 use http_body_util::{Full, BodyExt};
@@ -30,10 +31,11 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use payload::FunctionPayload;
+use payloads::FunctionPayload;
 use serde_json::json;
 use tokio::net::TcpListener;
-use utils::FunctionsResponse;
+use response::FunctionsResponse;
+use triggers::Trigger;
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
@@ -58,8 +60,8 @@ where
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
-    functions: HashMap<String, F>,
-    env: S
+    functions: HashMap<String, (F, Trigger)>,
+    env: S,
 }
 
 impl<F, S, R> Clone for AzureFuncHandler<F, S, R> 
@@ -122,12 +124,12 @@ where
         }
     }
 
-    pub fn add<N>(self, name: N, handler: F) -> Self
+    pub fn trigger<N>(self, name: N, handler: F, trigger: Trigger) -> Self
         where N: Into<String>
     {
         match Arc::try_unwrap(self.inner) {
             Ok(mut inner) => {
-                inner.functions.insert(name.into(), handler);
+                inner.functions.insert(name.into(), (handler, trigger));
 
                 Self {
                     inner: Arc::new(inner)
@@ -194,7 +196,7 @@ where
 
     let handler = match &deserialize_request {
         #[cfg(feature = "http")]
-        HttpData(payload) => handlers.inner.functions.get(payload.method_name()).unwrap(),
+        HttpData(payload) => handlers.inner.functions.get(payload.method_name()).unwrap().0,
         #[cfg(feature = "event-hub")]
         EventHubData(payload) => payload.method_name(),
         #[cfg(feature = "timer")]
