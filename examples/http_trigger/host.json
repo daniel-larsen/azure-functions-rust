@@ -7,7 +7,7 @@
 	},
 	"customHandler": {
 		"description": {
-			"defaultExecutablePath": "target/debug/handler.exe"
+			"defaultExecutablePath": "target/debug/http-trigger-example.exe"
 		}
 	}
 }

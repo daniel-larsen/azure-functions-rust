@@ -1,4 +1,4 @@
-use crate::InputBinding;
+use crate::payload::InputBinding;
 use hyper::{HeaderMap, header::HeaderName};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
