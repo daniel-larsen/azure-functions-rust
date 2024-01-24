@@ -23,7 +23,6 @@ pub mod bindings;
 pub mod utils;
 pub mod response;
 
-use crate::FunctionPayload::HttpData;
 use http_body_util::{Full, BodyExt};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Incoming, Bytes};
@@ -31,7 +30,7 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use payloads::FunctionPayload;
+use payloads::FromPayload;
 use serde_json::json;
 use tokio::net::TcpListener;
 use response::FunctionsResponse;
@@ -40,6 +39,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::future::Future;
+use std::marker::PhantomData;
 use std::net::SocketAddr;
 use std::sync::Arc;
 #[cfg(feature = "tracing")]
@@ -47,27 +47,31 @@ use tracing::instrument::WithSubscriber;
 #[cfg(feature = "tracing")]
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 
-pub struct AzureFuncHandler<F, S, R> where
-    F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+pub struct AzureFuncHandler<F, P, S, R> where
+    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
-    inner: Arc<AzureFuncHandlerInner<F, S, R>>
+    inner: Arc<AzureFuncHandlerInner<F, P, S, R>>,
 }
 
-struct AzureFuncHandlerInner<F, S, R> 
+struct AzureFuncHandlerInner<F, P, S, R> 
 where
-    F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
     functions: HashMap<String, (F, InputBinding)>,
     env: S,
+    phantom: PhantomData<P>
 }
 
-impl<F, S, R> Clone for AzureFuncHandler<F, S, R> 
+impl<F, P, S, R> Clone for AzureFuncHandler<F, P, S, R> 
 where
-    F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
@@ -79,9 +83,10 @@ where
 }
 
 
-impl<F, S, R> AzureFuncHandler<F, S, R> 
+impl<F, P, S, R> AzureFuncHandler<F, P, S, R> 
 where
-    F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
@@ -89,7 +94,8 @@ where
         Self {
             inner: Arc::new(AzureFuncHandlerInner {
                 functions: HashMap::new(),
-                env
+                env,
+                phantom: PhantomData
             })
         }
     }
@@ -164,12 +170,13 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
         .boxed()
 }
 
-async fn request_handler<F, S, R>(
+async fn request_handler<F, P, S, R>(
     request: Request<Incoming>,
-    handlers: AzureFuncHandler<F, S, R>
+    handlers: AzureFuncHandler<F, P, S, R>
 ) -> Result<Response<BoxBody<Bytes, hyper::Error>>, hyper::Error>
 where
-    F: Fn(FunctionPayload, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
+    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
     R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
@@ -182,23 +189,11 @@ where
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
-    let vector: Vec<u8> = bytes.to_vec();
-    let deserialize_request: FunctionPayload = match serde_json::from_slice(&vector) {
-        Ok(deserialize_request) => deserialize_request,
-        Err(error) => return Ok(log_error(format!("{:#?}", error))),
-    };
-
-    let handler = match &deserialize_request {
-        #[cfg(feature = "http")]
-        HttpData(payload) => handlers.inner.functions.get(payload.method_name()).unwrap().0,
-        #[cfg(feature = "event-hub")]
-        EventHubData(payload) => payload.method_name(),
-        #[cfg(feature = "timer")]
-        TimerData(payload) => payload.method_name(),
-    };
+    let payload = P::from_payload(bytes.to_vec()).unwrap();
+    let handler = handlers.inner.functions.get(&payload.method_name()).unwrap().0;
 
     #[cfg(feature = "tracing")]
-    let response = match handler(deserialize_request, handlers.inner.env.clone())
+    let response = match handler(payload, handlers.inner.env.clone())
         .with_subscriber(subscriber)
         .await
     {

@@ -45,8 +45,8 @@ pub struct HttpPayload {
 }
 
 impl HttpPayload {
-    pub fn method_name(&self) -> &str {
-        self.metadata.sys.method_name.as_str()
+    pub fn method_name(&self) -> String {
+        self.metadata.sys.method_name.to_string()
     }
 }
 

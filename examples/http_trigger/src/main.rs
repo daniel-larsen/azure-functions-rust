@@ -1,7 +1,7 @@
 use std::error::Error;
-use azure_functions::{bindings::InputBinding, payloads::{http::HttpMethod::{Get, Post}, FunctionPayload}, response::{FunctionsResponse, HttpStatusCode}, AzureFuncHandler};
+use azure_functions::{bindings::InputBinding, payloads::http::{HttpMethod::{Get, Post}, HttpPayload}, response::{FunctionsResponse, HttpStatusCode}, AzureFuncHandler};
 
-async fn my_http_func(payload: FunctionPayload, env: Environment) -> Result<FunctionsResponse, Box<dyn Error>> {
+async fn my_http_func(payload: HttpPayload, env: Environment) -> Result<FunctionsResponse, Box<dyn Error>> {
     // both tracing and log messages are captured
     tracing::info!("This will be logged to Application Insights");
     log::info!("This will also be logged to Application Insights");

@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use self::http::HttpPayload;
 
 #[cfg(feature = "event-hub")]
 pub mod event_hub;
@@ -24,28 +25,17 @@ pub enum InputBinding {
     Blob(String),
 }
 
-// trait FromPayload {
-//     fn from_payload(payload: &FunctionPayload) -> Self;
-// }
+pub trait FromPayload {
+    fn from_payload(payload: Vec<u8>) -> Result<Self, serde_json::Error> where Self: Sized;
+    fn method_name(&self) -> String;
+}
 
-// pub struct Param(pub String);
+impl FromPayload for HttpPayload {
+    fn from_payload(payload: Vec<u8>) -> Result<Self, serde_json::Error> {
+        serde_json::from_slice(&payload)
+    }
 
-// impl FromPayload for Param {
-//     fn from_payload(payload: &FunctionPayload) -> Self {
-//         Param(payload.param.clone())
-//     }
-// }
-
-// trait Handler<T> {
-//     fn call(self, payload: FunctionPayload);
-// }
-
-// impl<F, T> Handler<T> for F
-// where
-//     F: Fn(T),
-//     T: FromPayload,
-// {
-//     fn call(self, payload: FunctionPayload) {
-//         (self)(T::from_payload(&payload));
-//     }
-// }
+    fn method_name(&self) -> String {
+        self.method_name()
+    }
+}
