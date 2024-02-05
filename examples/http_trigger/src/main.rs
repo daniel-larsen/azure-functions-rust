@@ -6,8 +6,7 @@ async fn my_http_func(payload: HttpPayload, env: Environment) -> Result<Function
     tracing::info!("This will be logged to Application Insights");
     log::info!("This will also be logged to Application Insights");
 
-    let response =
-        FunctionsResponse::http(HttpStatusCode::Ok).body("Testing");
+    let response = FunctionsResponse::http(HttpStatusCode::Ok).body("Testing");
     Ok(response)
 }
 
@@ -19,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let environment = Environment {}; // used to pass clients to the function handlers
 
     let handler = AzureFuncHandler::new(environment)
-    .trigger("MyHttpFunc", my_http_func, InputBinding::http("MyHttpFunc", vec![Get, Post]));
+    .trigger("MyHttpFunc", Http("MyHttpFunc", "/MyHttpFunc", get(my_http_func)));
 
     match std::env::args().nth(1) {
         Some(arg) if arg == "update" => handler.update_bindings()?,

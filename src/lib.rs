@@ -23,57 +23,30 @@ pub mod bindings;
 pub mod utils;
 pub mod response;
 
-use http_body_util::{Full, BodyExt};
-use http_body_util::combinators::BoxBody;
-use hyper::body::{Incoming, Bytes};
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{Request, Response};
+use http_body_util::{Full, BodyExt, combinators::BoxBody};
+use hyper::{Request, Response, service::service_fn, server::conn::http1, body::{Incoming, Bytes}};
 use hyper_util::rt::TokioIo;
-use payloads::FromPayload;
+use payloads::{FromPayload, FunctionPayload};
 use serde_json::json;
 use tokio::net::TcpListener;
 use response::FunctionsResponse;
 use bindings::InputBinding;
-use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
-use std::future::Future;
-use std::marker::PhantomData;
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{collections::HashMap, error::Error, fs, net::SocketAddr, sync::{Arc, Mutex}};
 #[cfg(feature = "tracing")]
 use tracing::instrument::WithSubscriber;
 #[cfg(feature = "tracing")]
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 
-pub struct AzureFuncHandler<F, P, S, R> where
-    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
+pub struct Worker<S> where
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
-    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
+    WorkerInner<S>: std::marker::Send + 'static + std::marker::Sync,
 {
-    inner: Arc<AzureFuncHandlerInner<F, P, S, R>>,
+    inner: Arc<WorkerInner<S>>,
 }
 
-struct AzureFuncHandlerInner<F, P, S, R> 
+impl<S> Clone for Worker<S> 
 where
-    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
-    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
-{
-    functions: HashMap<String, (F, InputBinding)>,
-    env: S,
-    phantom: PhantomData<P>
-}
-
-impl<F, P, S, R> Clone for AzureFuncHandler<F, P, S, R> 
-where
-    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
-    S: Clone + std::marker::Send + 'static + std::marker::Sync,
-    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
     fn clone(&self) -> Self {
         Self {
@@ -82,20 +55,34 @@ where
     }
 }
 
-
-impl<F, P, S, R> AzureFuncHandler<F, P, S, R> 
+struct WorkerInner<S> 
 where
-    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
-    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
+{
+    functions: HashMap<String, (Function<S>, InputBinding)>,
+    env: S,
+}
+
+trait FunctionHandler<S>: Send {
+    fn call_with_state(self: Box<Self>, request: dyn FromPayload, state: S) -> Result<FunctionsResponse, Box<dyn Error>>;
+}
+
+struct Function<S> where
+    S: Clone + std::marker::Send + 'static + std::marker::Sync,
+{
+    handler: Mutex<Box<dyn FunctionHandler<S>>>,
+    binding: InputBinding
+}
+
+impl<S> Worker<S> 
+where
+    S: Clone + std::marker::Send + 'static + std::marker::Sync,
 {
     pub fn new(env: S) -> Self {
         Self {
-            inner: Arc::new(AzureFuncHandlerInner {
+            inner: Arc::new(WorkerInner {
                 functions: HashMap::new(),
-                env,
-                phantom: PhantomData
+                env
             })
         }
     }
@@ -170,15 +157,12 @@ fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
         .boxed()
 }
 
-async fn request_handler<F, P, S, R>(
+async fn request_handler<S>(
     request: Request<Incoming>,
-    handlers: AzureFuncHandler<F, P, S, R>
+    handlers: Worker<S>
 ) -> Result<Response<BoxBody<Bytes, hyper::Error>>, hyper::Error>
 where
-    F: Fn(P, S) -> R + std::marker::Send + 'static + Copy + std::marker::Sync,
-    P: FromPayload + 'static + std::marker::Sync + std::marker::Send,
     S: Clone + std::marker::Send + 'static + std::marker::Sync,
-    R: Future<Output = Result<FunctionsResponse, Box<dyn Error>>> + std::marker::Send + 'static,
 {
     let events = utils::tracing::CustomLayer::new(tracing::Level::INFO);
     #[cfg(feature = "tracing")]
@@ -189,7 +173,7 @@ where
         Err(error) => return Ok(log_error(format!("{:#?}", error))),
     };
 
-    let payload = P::from_payload(bytes.to_vec()).unwrap();
+    let payload = FunctionPayload::from_payload(bytes.to_vec()).unwrap();
     let handler = handlers.inner.functions.get(&payload.method_name()).unwrap().0;
 
     #[cfg(feature = "tracing")]
